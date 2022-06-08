@@ -53,6 +53,22 @@ require_params IMAGE
 
 start_ssh_agent
 
+cat <<EOF | indent
+# host: enter in the container
+docker exec -ti -u builder [tab] bash
+
+# container: enter in the bitbake
+cd /srv/oe && source setup-environment build
+
+# in this simulator [ctrl][c] to exit
+# host: if needed stop any zombie
+docker container stop [tab]
+EOF
+
+# flush
+for i in $(seq 10); do sleep 1; echo -ne "\r "; done
+sleep infinity
+
 source setup-environment build
 
 # store bitbake-cookerdaemon log
