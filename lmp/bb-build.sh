@@ -78,5 +78,16 @@ if [ "$BUILD_SDK" == "1" ] && [ "${DISTRO}" != "lmp-mfgtool" ]; then
     status "Run bitbake (populate sdk)"
     bitbake -D ${BITBAKE_EXTRA_ARGS} ${IMAGE} -c populate_sdk
 fi
+
+status "Run bitbake (debug)"
+dump-signatures(){
+    set +e
+    run bitbake --dump-signatures printdiff ${1}
+    set -e
+}
+#dump-signatures base-files-issue os-release
+bitbake base-files-issue os-release
+dump-signatures ${IMAGE}
+
 status "Run bitbake"
 bitbake -D ${BITBAKE_EXTRA_ARGS} ${IMAGE}
