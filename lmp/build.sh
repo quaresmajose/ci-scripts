@@ -80,16 +80,10 @@ rm -f ${DEPLOY_DIR_IMAGE}/*.txt
 ## Only publish wic.gz
 rm -f ${DEPLOY_DIR_IMAGE}/*.wic
 
-find ${DEPLOY_DIR}/{licenses,images} | grep $IMAGE
-
 # Link the license manifest for all the images produced by the build
-imgs="$(find ${DEPLOY_DIR_IMAGE} -name *${MACHINE}*.rootfs.manifest)"
+imgs="$(find ${DEPLOY_DIR_IMAGE} -name *${MACHINE}.manifest)"
 if [ "$imgs" = "" ]; then
-	# try find the legacy pattern
-	imgs="$(find ${DEPLOY_DIR_IMAGE} -name *${MACHINE}.manifest)"
-	if [ "$imgs" = "" ]; then
-		status "Image manifest not found, license manifest will be skipped"
-	fi
+	status "Image manifest not found, license manifest will be skipped"
 fi
 for img in $imgs; do
 	image_name=`basename ${img} | sed -e "s/.manifest//"`
