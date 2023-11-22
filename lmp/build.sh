@@ -74,6 +74,7 @@ if [ -n "$OS_SELFTEST" ]; then
 	su builder -c $HERE/bb-selftest.sh
 	exit
 fi
+rm -rf $cache; mkdir $cache; chown builder $cache
 su builder -c $HERE/bb-build.sh
 
 status "Post-build processing"
