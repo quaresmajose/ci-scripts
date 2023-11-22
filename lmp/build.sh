@@ -49,6 +49,7 @@ ln -s $cache downloads
 chown -R builder .
 
 export FACTORY_SSTATE_CACHE_MIRROR="/var/cache/bitbake/v${LMP_VERSION_CACHE}-sstate-cache"
+rm -rf $FACTORY_SSTATE_CACHE_MIRROR
 [ -d $FACTORY_SSTATE_CACHE_MIRROR ] || (mkdir $FACTORY_SSTATE_CACHE_MIRROR && chown builder $FACTORY_SSTATE_CACHE_MIRROR)
 su builder -c $HERE/bb-config.sh
 touch ${archive}/customize-target.log && chown builder ${archive}/customize-target.log
