@@ -46,17 +46,11 @@ fi
 [ -d $cache ] || (mkdir -p $cache; chown builder $cache)
 ln -s $cache downloads
 
-cache="/var/cache/bitbake/v${LMP_VERSION_CACHE}-sstate-cache"
-if [ -d /var/cache/bitbake/sstate-cache-${DISTRO} ] ; then
-	# TODO remove once we've migrated everyone
-	status Migrating to new sstate cache layout
-	mv /var/cache/bitbake/sstate-cache-$DISTRO $cache
-fi
-[ -d $cache ] || (mkdir $cache; chown builder $cache)
-ln -s $cache sstate-cache
-
 chown -R builder .
 
+export FACTORY_SSTATE_CACHE_MIRROR="/var/cache/bitbake/v${LMP_VERSION_CACHE}-sstate-cache"
+rm -rf $FACTORY_SSTATE_CACHE_MIRROR
+[ -d $FACTORY_SSTATE_CACHE_MIRROR ] || (mkdir $FACTORY_SSTATE_CACHE_MIRROR && chown builder $FACTORY_SSTATE_CACHE_MIRROR)
 su builder -c $HERE/bb-config.sh
 touch ${archive}/customize-target.log && chown builder ${archive}/customize-target.log
 touch ${archive}/bitbake_buildchart.svg && chown builder ${archive}/bitbake_buildchart.svg
@@ -144,6 +138,8 @@ if [ -d "${archive}" ] ; then
 	mv ${archive}/bitbake_cookerdaemon.log ${archive}/other/
 	mv ${archive}/bitbake_buildstats.log ${archive}/other/
 	mv ${archive}/bitbake_buildchart.svg ${archive}/other/
+	gzip -f ${archive}/bitbake_sstatemirror.log
+	mv ${archive}/bitbake_sstatemirror.log.gz ${archive}/other/
 
 	# Compress and publish source tarball (for *GPL* packages)
 	if [ -d ${DEPLOY_DIR_IMAGE}/source-release ]; then
