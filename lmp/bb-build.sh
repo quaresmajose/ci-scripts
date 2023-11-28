@@ -81,9 +81,11 @@ dump-signatures(){
     run bitbake --dump-signatures printdiff ${1}
     set -e
 }
-#dump-signatures base-files-issue os-release
+dump-signatures base-files-issue os-release
 bitbake base-files-issue os-release
 dump-signatures ${IMAGE}
+
+exit 1
 
 status "Run bitbake"
 bitbake -D ${BITBAKE_EXTRA_ARGS} ${IMAGE}
