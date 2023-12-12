@@ -71,9 +71,10 @@ su builder -c $HERE/bb-build.sh
 
 status "Post-build processing"
 
-DEPLOY_DIR="$(grep "^DEPLOY_DIR=" ${archive}/bitbake_global_env.txt | cut -d'=' -f2 | tr -d '"')"
-DEPLOY_DIR_IMAGE="${DEPLOY_DIR}/images/${MACHINE}"
-DEPLOY_DIR_SDK="${DEPLOY_DIR}/sdk/"
+DEPLOY_DIR_IMAGE="$(grep "^DEPLOY_DIR_IMAGE=" ${archive}/bitbake_global_env.txt | cut -d'=' -f2 | tr -d '"')"
+SDK_DEPLOY="$(grep "SDK_DEPLOY=" ${archive}/bitbake_global_env.txt | cut -d'=' -f2 | tr -d '"')"
+LICENSE_DIRECTORY="$(grep "LICENSE_DIRECTORY=" ${archive}/bitbake_global_env.txt | cut -d'=' -f2 | tr -d '"')"
+DEPLOY_DIR_SRC="$(grep "DEPLOY_DIR_SRC=" ${archive}/bitbake_global_env.txt | cut -d'=' -f2 | tr -d '"')"
 
 # Prepare files to publish
 rm -f ${DEPLOY_DIR_IMAGE}/*.txt
@@ -84,22 +85,22 @@ rm -f ${DEPLOY_DIR_IMAGE}/*.wic
 for img in ${DEPLOY_DIR_IMAGE}/*${MACHINE}.manifest; do
 	image_name=`basename ${img} | sed -e "s/.manifest//"`
 	image_name_id=`readlink ${img} | sed -e "s/\..*manifest//"`
-	if [ -f ${DEPLOY_DIR}/licenses/${image_name_id}/license.manifest ]; then
-		cp ${DEPLOY_DIR}/licenses/${image_name_id}/license.manifest ${DEPLOY_DIR_IMAGE}/${image_name_id}.license.manifest
+	if [ -f ${LICENSE_DIRECTORY}/${image_name_id}/license.manifest ]; then
+		cp ${LICENSE_DIRECTORY}/${image_name_id}/license.manifest ${DEPLOY_DIR_IMAGE}/${image_name_id}.license.manifest
 		ln -sf ${image_name_id}.license.manifest ${DEPLOY_DIR_IMAGE}/${image_name}.license.manifest
 	fi
 	# Also take care of the image_license, which contains the binaries used by wic outside the rootfs
-	if [ -f ${DEPLOY_DIR}/licenses/${image_name_id}/image_license.manifest ]; then
-		cp ${DEPLOY_DIR}/licenses/${image_name_id}/image_license.manifest ${DEPLOY_DIR_IMAGE}/${image_name_id}.image_license.manifest
+	if [ -f ${LICENSE_DIRECTORY}/${image_name_id}/image_license.manifest ]; then
+		cp ${LICENSE_DIRECTORY}/${image_name_id}/image_license.manifest ${DEPLOY_DIR_IMAGE}/${image_name_id}.image_license.manifest
 		ln -sf ${image_name_id}.image_license.manifest ${DEPLOY_DIR_IMAGE}/${image_name}.image_license.manifest
 	fi
 done
 
 # Generate a tarball containing the source code of *GPL* packages (based on yocto dev-manual)
 DEPLOY_SOURCES="${DEPLOY_DIR_IMAGE}/source-release"
-if [ -d ${DEPLOY_DIR}/sources ]; then
+if [ -d "${DEPLOY_DIR_SRC}" ]; then
 	mkdir -p ${DEPLOY_SOURCES}
-	for sarch in ${DEPLOY_DIR}/sources/*; do
+	for sarch in ${DEPLOY_DIR_SRC}/*; do
 		for pkg in ${sarch}/*; do
 			# Get package name from path
 			p=`basename $pkg`
@@ -110,12 +111,12 @@ if [ -d ${DEPLOY_DIR}/sources ]; then
 			grep -q "NAME: ${p}$" ${DEPLOY_DIR_IMAGE}/*.manifest || continue
 
 			# Only archive GPL packages (update *GPL* regex for additional licenses)
-			numfiles=`ls ${DEPLOY_DIR}/licenses/${p}/*GPL* 2> /dev/null | wc -l`
+			numfiles=`ls ${LICENSE_DIRECTORY}/${p}/*GPL* 2> /dev/null | wc -l`
 			if [ ${numfiles} -gt 0 ]; then
 				mkdir -p ${DEPLOY_SOURCES}/${p}/source
 				cp -f ${pkg}/* ${DEPLOY_SOURCES}/${p}/source 2> /dev/null
 				mkdir -p ${DEPLOY_SOURCES}/${p}/license
-				cp -f ${DEPLOY_DIR}/licenses/${p}/* ${DEPLOY_SOURCES}/${p}/license 2> /dev/null
+				cp -f ${LICENSE_DIRECTORY}/${p}/* ${DEPLOY_SOURCES}/${p}/license 2> /dev/null
 			fi
 		done
 	done
@@ -141,7 +142,7 @@ if [ -d "${archive}" ] ; then
 	mv ${archive}/bitbake_sstatemirror.log.gz ${archive}/other/
 
 	# Compress and publish source tarball (for *GPL* packages)
-	if [ -d ${DEPLOY_DIR_IMAGE}/source-release ]; then
+	if [ -d ${DEPLOY_SOURCES} ]; then
 		tar --remove-files -C ${DEPLOY_DIR_IMAGE} -cf ${MACHINE}-source-release.tar source-release
 		mv ${MACHINE}-source-release.tar ${archive}/other/
 	fi
@@ -194,7 +195,7 @@ if [ -d "${archive}" ] ; then
 		done
 	fi
 	## Copy the SDK installation file
-	cp ${DEPLOY_DIR_SDK}/lmp*.sh ${archive}/sdk/ || true
+	cp ${SDK_DEPLOY}/lmp*.sh ${archive}/sdk/ || true
 
 	# Remove ota-ext4 in case the compressed format is available (to reduce time spent uploading)
 	if [ -f ${archive}/other/${IMAGE}-${MACHINE}.ota-ext4.gz ]; then
