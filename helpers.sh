@@ -74,6 +74,7 @@ function repo_sync {
 		status "Adding git config extraheader for $domain/factories"
 		git config --global http.https://${domain}/factories.extraheader "$(cat /secrets/git.http.extraheader)"
 	fi
+	git config --global --add safe.directory /repo/.git
 	for i in $(seq 4); do
 		run repo init --repo-rev=v2.35 --no-clone-bundle -u $* ${REPO_INIT_OVERRIDES} && break
 		status "repo init failed with error $?"
