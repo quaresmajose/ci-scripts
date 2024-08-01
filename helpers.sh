@@ -94,6 +94,8 @@ function repo_sync {
 		git config --global http.https://${domain}/factories.extraheader "$(cat /secrets/git.http.extraheader)"
 	fi
 
+	git config --global --add safe.directory /repo/.git
+
 	repo_sync_helper 1m repo init --repo-rev=v2.35 --no-clone-bundle -u $* ${REPO_INIT_OVERRIDES}
 	repo_sync_helper 4m repo sync
 
