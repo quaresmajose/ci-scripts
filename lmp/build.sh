@@ -129,13 +129,14 @@ if [ -d ${DEPLOY_DIR}/sources ]; then
 			grep -q "NAME: ${p}$" ${DEPLOY_DIR_IMAGE}/*.manifest || continue
 
 			# Only archive GPL packages (update *GPL* regex for additional licenses)
-			numfiles=`ls ${DEPLOY_DIR}/licenses/${p}/*GPL* 2> /dev/null | wc -l`
-			if [ ${numfiles} -gt 0 ]; then
-				mkdir -p ${DEPLOY_SOURCES}/${p}/source
-				cp -f ${pkg}/* ${DEPLOY_SOURCES}/${p}/source 2> /dev/null
-				mkdir -p ${DEPLOY_SOURCES}/${p}/license
-				cp -f ${DEPLOY_DIR}/licenses/${p}/* ${DEPLOY_SOURCES}/${p}/license 2> /dev/null
-			fi
+			find ${DEPLOY_DIR}/licenses/${p} -name "*GPL*" -type f &> /dev/null || continue
+
+			mkdir -p ${DEPLOY_SOURCES}/${p}/source
+			cp -f ${pkg}/* ${DEPLOY_SOURCES}/${p}/source 2> /dev/null
+			mkdir -p ${DEPLOY_SOURCES}/${p}/license
+			for license in `find ${DEPLOY_DIR}/licenses -name "${p}" -type d`; do
+				cp -f ${license}/* ${DEPLOY_SOURCES}/${p}/license 2> /dev/null
+			done
 		done
 	done
 fi
