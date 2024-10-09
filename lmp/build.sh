@@ -81,68 +81,6 @@ rm -f ${DEPLOY_DIR_IMAGE}/*.txt
 ## Only publish wic.gz
 rm -f ${DEPLOY_DIR_IMAGE}/*.wic
 
-status "Post-build processing (license)"
-# Link the license manifest for all the images produced by the build
-for img in ${DEPLOY_DIR_IMAGE}/*${MACHINE}*.manifest; do
-	if [ "${DISTRO}" = "lmp-mfgtool" ]; then
-		status "Image manifest not exist in this distro, skipping"
-		break
-	fi
-	if ! [ -e "${img}" ]; then
-		status "Image manifest not found on ${DEPLOY_DIR_IMAGE}, license manifest can't be collected"
-		eixt 1
-	fi
-	# only consider symbolic links
-	if ! [ -h "${img}" ]; then
-		continue
-	fi
-	image_name=`basename ${img} | sed -e "s/.manifest//"`
-	image_path=`find ${DEPLOY_DIR}/licenses -name "${image_name}*" -type d`
-	image_name_id=`basename ${image_path}`
-	if [ -f ${image_path}/license.manifest ]; then
-		cp ${image_path}/license.manifest ${DEPLOY_DIR_IMAGE}/${image_name_id}.license.manifest
-		ln -sf ${image_name_id}.license.manifest ${DEPLOY_DIR_IMAGE}/${image_name}.license.manifest
-	else
-		status "Image ${image_name} license manifest not found on ${DEPLOY_DIR}/licenses, license manifest can't be collected"
-		# FIXME: there is a bug in oe-core and sometimes the lic folder is empty
-		# https://bugzilla.yoctoproject.org/show_bug.cgi?id=15394
-		#eixt 1
-	fi
-	# Also take care of the image_license, which contains the binaries used by wic outside the rootfs
-	if [ -f ${image_path}/image_license.manifest ]; then
-		cp ${image_path}/image_license.manifest ${DEPLOY_DIR_IMAGE}/${image_name_id}.image_license.manifest
-		ln -sf ${image_name_id}.image_license.manifest ${DEPLOY_DIR_IMAGE}/${image_name}.image_license.manifest
-	fi
-done
-
-# Generate a tarball containing the source code of *GPL* packages (based on yocto dev-manual)
-DEPLOY_SOURCES="${DEPLOY_DIR_IMAGE}/source-release"
-if [ -d ${DEPLOY_DIR}/sources ]; then
-	status "Post-build processing (source release)"
-	mkdir -p ${DEPLOY_SOURCES}
-	for sarch in ${DEPLOY_DIR}/sources/*; do
-		for pkg in ${sarch}/*; do
-			# Get package name from path
-			p=`basename $pkg`
-			p=${p%-*}
-			p=${p%-*}
-
-			# Check if package is part of any of the produced images
-			grep -q "NAME: ${p}$" ${DEPLOY_DIR_IMAGE}/*.manifest || continue
-
-			# Only archive GPL packages (update *GPL* regex for additional licenses)
-			find ${DEPLOY_DIR}/licenses/${p} -name "*GPL*" -type f &> /dev/null || continue
-
-			mkdir -p ${DEPLOY_SOURCES}/${p}/source
-			cp -f ${pkg}/* ${DEPLOY_SOURCES}/${p}/source 2> /dev/null
-			mkdir -p ${DEPLOY_SOURCES}/${p}/license
-			for license in `find ${DEPLOY_DIR}/licenses -name "${p}" -type d`; do
-				cp -f ${license}/* ${DEPLOY_SOURCES}/${p}/license 2> /dev/null
-			done
-		done
-	done
-fi
-
 if [ -d "${archive}" ] ; then
 	status "Post-build processing (archive)"
 	mkdir ${archive}/other
