@@ -145,6 +145,7 @@ if [ -d ${DEPLOY_DIR}/sources ] && [ "${IMAGE_MANIFESTS}" != "" ]; then
 			fi
 		done
 	done
+	find ${DEPLOY_SOURCES} -maxdepth 0 -type d >> ${DEPLOY_SOURCES}.log
 fi
 
 if [ -d "${archive}" ] ; then
@@ -168,9 +169,10 @@ if [ -d "${archive}" ] ; then
 	mv ${archive}/bitbake_sstatemirror.log.gz ${archive}/other/
 
 	# Compress and publish source tarball (for *GPL* packages)
-	if [ -d ${DEPLOY_DIR_IMAGE}/source-release ]; then
+	if [ -d ${DEPLOY_SOURCES} ]; then
 		tar --remove-files -C ${DEPLOY_DIR_IMAGE} -cf ${MACHINE}-source-release.tar source-release
 		mv ${MACHINE}-source-release.tar ${archive}/other/
+		mv ${DEPLOY_SOURCES}.log ${archive}/other/
 	fi
 
 	# Compress and publish the ostree repository
